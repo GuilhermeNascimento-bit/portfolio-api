@@ -1,3 +1,5 @@
+import traceback
+
 from fastapi import APIRouter, HTTPException
 
 from app.services.github import fetch_github_data
@@ -10,4 +12,5 @@ async def get_github():
     try:
         return await fetch_github_data()
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"GitHub API error: {str(e)}")
+        detail = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
+        raise HTTPException(status_code=502, detail=detail)
