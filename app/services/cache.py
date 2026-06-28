@@ -1,11 +1,12 @@
 import ssl
+from typing import Optional
 from urllib.parse import urlparse
 
 import redis.asyncio as redis
 
 from app.config import settings
 
-_client: redis.Redis | None = None
+_client: Optional[redis.Redis] = None
 
 
 def _make_client() -> redis.Redis:
