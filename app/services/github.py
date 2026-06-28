@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from functools import partial
 
 import requests
@@ -7,6 +8,7 @@ import requests
 from app.config import settings
 from app.services.cache import get_redis
 
+logger = logging.getLogger(__name__)
 CACHE_KEY = "github:data"
 
 HEADERS = {
@@ -49,15 +51,26 @@ def _sync_fetch(username: str, token: str) -> dict:
 
 
 async def fetch_github_data() -> dict:
-    r = await get_redis()
-    cached = await r.get(CACHE_KEY)
-    if cached:
-        return json.loads(cached)
+    # Try cache first
+    try:
+        r = await get_redis()
+        cached = await r.get(CACHE_KEY)
+        if cached:
+            return json.loads(cached)
+    except Exception as e:
+        logger.warning("Redis unavailable, skipping cache: %s", e)
 
+    # Fetch from GitHub
     loop = asyncio.get_event_loop()
     data = await loop.run_in_executor(
         None, partial(_sync_fetch, settings.GITHUB_USERNAME, settings.GITHUB_TOKEN)
     )
 
-    await r.setex(CACHE_KEY, settings.CACHE_TTL, json.dumps(data))
+    # Try to cache the result
+    try:
+        r = await get_redis()
+        await r.setex(CACHE_KEY, settings.CACHE_TTL, json.dumps(data))
+    except Exception:
+        pass
+
     return data
