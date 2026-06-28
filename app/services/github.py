@@ -14,7 +14,11 @@ async def fetch_github_data() -> dict:
     if cached:
         return json.loads(cached)
 
-    headers = {"Accept": "application/vnd.github+json"}
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "portifolio-api/1.0",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
     if settings.GITHUB_TOKEN:
         headers["Authorization"] = f"Bearer {settings.GITHUB_TOKEN}"
 
