@@ -9,6 +9,10 @@ from app.services.cache import get_redis
 
 class MetricsMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        # Health checks (keep-alive pings) are not real traffic: don't count them
+        if request.url.path == "/":
+            return await call_next(request)
+
         start = time.perf_counter()
         response = await call_next(request)
         duration_ms = round((time.perf_counter() - start) * 1000, 2)
