@@ -25,12 +25,16 @@ def _sync_fetch(username: str, token: str) -> dict:
 
     with requests.Session() as s:
         s.headers.update(headers)
-        user = s.get(f"https://api.github.com/users/{username}", timeout=10).json()
-        repos = s.get(
+        user_res = s.get(f"https://api.github.com/users/{username}", timeout=10)
+        user_res.raise_for_status()
+        repos_res = s.get(
             f"https://api.github.com/users/{username}/repos",
             params={"sort": "updated", "per_page": 10},
             timeout=10,
-        ).json()
+        )
+        repos_res.raise_for_status()
+        user = user_res.json()
+        repos = repos_res.json()
 
     return {
         "public_repos": user.get("public_repos", 0),
