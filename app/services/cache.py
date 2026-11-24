@@ -1,6 +1,4 @@
-import ssl
 from typing import Optional
-from urllib.parse import urlparse
 
 import redis.asyncio as redis
 
@@ -10,25 +8,9 @@ _client: Optional[redis.Redis] = None
 
 
 def _make_client() -> redis.Redis:
-    url = urlparse(settings.REDIS_URL)
-    use_ssl = settings.REDIS_URL.startswith("rediss://")
-
-    kwargs: dict = {
-        "host": url.hostname,
-        "port": url.port or 6379,
-        "password": url.password,
-        "username": url.username or "default",
-        "decode_responses": True,
-    }
-
-    if use_ssl:
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        kwargs["ssl"] = True
-        kwargs["ssl_context"] = ctx
-
-    return redis.Redis(**kwargs)
+    # from_url understands both redis:// and rediss:// (TLS, used by Upstash),
+    # and verifies the server certificate by default.
+    return redis.from_url(settings.REDIS_URL, decode_responses=True)
 
 
 async def get_redis() -> redis.Redis:
